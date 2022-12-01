@@ -29,7 +29,7 @@ def less_rotation(factors: [str], i: Rotation, j: Rotation) -> bool:
     # length of j-th factor
     j_length: int = len(factors[j_w])
 
-    for k in range(i_length * j_length):
+    for _ in range(i_length * j_length):
         # check if the factor to merge is less than factor already merged
         if factors[i_w][i_r] < factors[j_w][j_r]:
             return True
