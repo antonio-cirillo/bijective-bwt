@@ -1,2 +1,5 @@
+# files directory contains generated file for test
+/files/*
+
 /venv/
 /.idea/
