@@ -1,4 +1,3 @@
-
 def cfl(string: str) -> [str]:
     """Returns Lyndon factorization of string"""
     words: [str] = []
