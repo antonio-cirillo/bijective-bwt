@@ -1,5 +1,4 @@
-from huffman.huffman import huffman_encoding
-from huffman.huffman import huffman_decoding
+import string
 
 from util.file import RANDOM_FILE_NAME
 from util.file import COMPRESSED_FILE_NAME
@@ -8,9 +7,14 @@ from util.file import generate_random_file
 from util.file import write_compressed_file
 from util.file import read_compressed_file
 
+from huffman.huffman import huffman_encoding
+from huffman.huffman import huffman_decoding
+
 # declare sizes in byte
 # 10 byte, 100 byte, 1 kB, 10 kB, 100 kB, 1 MB, 10 MB
 SIZES = [10, 100, 1000, 10000, 100000, 1000000, 10000000]
+# declare alphabet
+ALPHABET: list[str] = list(string.ascii_letters)
 
 # for each size
 for size in SIZES:
@@ -38,3 +42,5 @@ for size in SIZES:
     # check if data is equal to decompressed_data
     if data != decompressed_data:
         print("decompressed data is not equal to original data")
+    else:
+        print("decompressed data is equal to original data")
