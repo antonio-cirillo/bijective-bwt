@@ -1,6 +1,5 @@
-from cfl import cfl
-from suffix_array import suffix_array_manber_myers
-
+from bbwt_cfl.cfl import cfl
+from bbwt_cfl.suffix_array import suffix_array_manber_myers
 
 class Rotation:
     def __init__(self, w: int, r: int):
