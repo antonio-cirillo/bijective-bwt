@@ -1,5 +1,5 @@
-from util.cfl import cfl
-from util.suffix_array import suffix_array_manber_myers
+from cfl import cfl
+from suffix_array import suffix_array_manber_myers
 
 
 class Rotation:
