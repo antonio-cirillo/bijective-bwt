@@ -6,8 +6,6 @@ from os import path
 
 RANDOM_DIR_PATH: str = path.join(os.getcwd(), 'files', 'generated')
 RANDOM_FILE_NAME: str = "{size}_random"
-COMPRESSED_DIR_PATH: str = path.join(os.getcwd(), 'files', 'compressed')
-COMPRESSED_FILE_NAME: str = "{size}_compressed"
 
 
 def _to_bytes(data: str) -> bytes:
@@ -43,11 +41,11 @@ def generate_random_file(file_name: str, file_size: int, file_type: str = 'txt')
     return file_path
 
 
-def write_compressed_file(file_name: str, data: str) -> str:
+def write_compressed_file(file_path: str, file_name: str, data: str) -> str:
     assert '/' not in file_name
 
-    os.makedirs(COMPRESSED_DIR_PATH, exist_ok=True)
-    file_path: str = path.join(COMPRESSED_DIR_PATH, f"{file_name}.bin")
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.bin")
     with open(file_path, 'wb') as file:
         data_binary = _to_bytes(data)
         file.write(data_binary)
@@ -55,11 +53,11 @@ def write_compressed_file(file_name: str, data: str) -> str:
     return file_path
 
 
-def read_compressed_file(file_name: str) -> str:
+def read_compressed_file(file_path: str, file_name: str) -> str:
     assert '/' not in file_name
 
-    os.makedirs(COMPRESSED_DIR_PATH, exist_ok=True)
-    file_path: str = path.join(COMPRESSED_DIR_PATH, f"{file_name}.bin")
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.bin")
     with open(file_path, 'rb') as file:
         data = file.read()
         data_binary = _to_binary(data)
