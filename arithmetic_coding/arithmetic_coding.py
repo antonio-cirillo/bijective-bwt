@@ -1,5 +1,6 @@
 import pyae
 
+
 def frequency_table(data):
     frequency = {}
     for i in data:
@@ -16,8 +17,8 @@ AE = pyae.ArithmeticEncoding(frequency_table=frequency_table(original_msg), save
 
 print("Original Message: {msg}".format(msg=original_msg))
 
-encoded_msg, encoder , interval_min_value, interval_max_value = AE.encode(msg=original_msg,
-                                                                          probability_table=AE.probability_table)
+encoded_msg, encoder, interval_min_value, interval_max_value = AE.encode(msg=original_msg,
+                                                                         probability_table=AE.probability_table)
 print("Encoded Message: {msg}".format(msg=encoded_msg))
 
 decoded_msg, decoder = AE.decode(encoded_msg=encoded_msg,
