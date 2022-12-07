@@ -63,3 +63,23 @@ def read_compressed_file(file_path: str, file_name: str) -> str:
         data_binary = _to_binary(data)
 
     return data_binary
+
+
+def read_in_chunks(file_object, chunk_size=1024):
+    """ Lazy function (generator) to read a file piece by piece. Default chunk size: 1k. """
+    while True:
+        data = file_object.read(chunk_size)
+        if not data:
+            break
+        yield data
+
+
+def write_decompressed_file(file_path: str, file_name: str, chunk: str) -> str:
+    assert '/' not in file_name
+
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.txt")
+    with open(file_path, 'a') as file:
+        file.write(chunk)
+
+    return file_path
