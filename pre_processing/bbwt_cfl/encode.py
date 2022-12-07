@@ -1,5 +1,5 @@
-from bbwt_cfl.cfl import cfl
-from bbwt_cfl.suffix_array import suffix_array_manber_myers
+from pre_processing.bbwt_cfl.cfl import cfl
+from pre_processing.bbwt_cfl.suffix_array import suffix_array_manber_myers
 
 
 class Rotation:

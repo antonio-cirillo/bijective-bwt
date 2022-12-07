@@ -2,14 +2,14 @@ from test.huffman import COMPRESSED_HUFFMAN_DIR_PATH
 from test.huffman import DECOMPRESSED_HUFFMAN_DIR_PATH
 from test.huffman import generate_file_name
 
-from bbwt_cfl.encode import encode as bbwt_encode
-from bbwt_cfl.decode import decode as bbwt_decode
+from pre_processing.bbwt_cfl.encode import encode as bbwt_encode
+from pre_processing.bbwt_cfl.decode import decode as bbwt_decode
 
-from mtf.mtf import m2f_e
-from mtf.mtf import m2f_d
+from pre_processing.mtf import m2f_e
+from pre_processing.mtf import m2f_d
 
-from huffman.huffman import huffman_encoding
-from huffman.huffman import huffman_decoding
+from compression.huffman import huffman_encoding
+from compression.huffman import huffman_decoding
 
 from util.file import read_in_chunks
 from util.file import write_compressed_file

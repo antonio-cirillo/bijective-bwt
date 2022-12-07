@@ -1,4 +1,4 @@
-from bwt import START_CHAR, END_CHAR
+from pre_processing.bwt import START_CHAR, END_CHAR
 
 
 def encode(string: str) -> str:
