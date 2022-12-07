@@ -2,6 +2,7 @@ import os.path as path
 import os
 
 COMPRESSED_HUFFMAN_DIR_PATH: str = path.join(os.getcwd(), 'compressed', 'huffman')
+DECOMPRESSED_HUFFMAN_DIR_PATH: str = path.join(os.getcwd(), 'decompressed', 'huffman')
 COMPRESSED_HUFFMAN_FILE_NAME: str = "{name}_{pre_processing}_huffman"
 
 
