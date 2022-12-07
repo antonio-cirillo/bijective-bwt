@@ -33,4 +33,4 @@ def huffman(file_path: str, file_name: str):
     # convert decompressed_data to text
     _data: str = ''.join([str(item) for item in decompressed_data])
 
-    assert _data == data
+    return os.path.join(COMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name)
