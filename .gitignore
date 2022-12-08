@@ -1,5 +1,7 @@
 # files directory contains generated file for test
 /files/*
+/compressed/*
+/decompressed/*
 
 /venv/
 /.idea/
