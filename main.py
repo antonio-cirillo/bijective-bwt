@@ -1,6 +1,6 @@
 from test.huffman.huffman import huffman
-from test.huffman.bwt_m2f_huffman import bwt_m2f_huffman
 from test.huffman.bbwt_m2f_huffman import bbwt_m2f_huffman
+from test.huffman.bbwt_m2f_rle_huffman import bbwt_m2f_rle_huffman
 
 import os
 
@@ -11,5 +11,6 @@ ALPHABET: list[chr] = [chr(i) for i in range(128)]
 
 # for each file inside files directory
 for file_name in os.listdir(PATH_DIR_TEST_FILES):
-    # huffman(PATH_DIR_TEST_FILES, file_name)
+    huffman(PATH_DIR_TEST_FILES, file_name)
     bbwt_m2f_huffman(PATH_DIR_TEST_FILES, file_name, ALPHABET)
+    bbwt_m2f_rle_huffman(PATH_DIR_TEST_FILES, file_name, ALPHABET)
