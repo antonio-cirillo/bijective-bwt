@@ -1,30 +1,34 @@
-def rle_e(s):
-    encoded_string = ""
-    i = 0
-    while i <= len(s) - 1:
-        count = 1
-        ch = s[i]
-        j = i
-        while j < len(s) - 1:
-            if s[j] == s[j + 1]:
-                count = count + 1
-                j = j + 1
-            else:
-                break
-        encoded_string = encoded_string + str(count) + ch
-        i = j + 1
-    return encoded_string
+def rle_e(sequence):
+    """Encode a sequence of characters and return the result as a list of tuples (data value and number of observed instances of value).
+    Keyword arguments:
+    sequence -- a sequence of characters to encode represented as a string.
+    """
+    count = 1
+    result = []
+
+    for x, item in enumerate(sequence):
+        if x == 0:
+            continue
+        elif item == sequence[x - 1]:
+            count += 1
+        else:
+            result.append((sequence[x - 1], count))
+            count = 1
+
+    result.append((sequence[len(sequence) - 1], count))
+
+    return result
 
 
-def decode_message(sq):
-    decoded_message = ""
-    i = 0
-    j = 0
-    while i <= len(sq) - 1:
-        run_count = int(sq[i])
-        run_word = sq[i + 1]
-        for j in range(run_count):
-            decoded_message = decoded_message + run_word
-            j = j + 1
-        i = i + 2
-    return decoded_message
+def rle_d(sequence):
+    """Decodes the sequence and returns the result as a string.
+    Keyword arguments:
+    sequence -- a list of tuples (data value and number of observed instances of value).
+    """
+    result = []
+
+    for item in sequence:
+        for _ in range(item[1]):
+            result.append(item[0])
+
+    return result
