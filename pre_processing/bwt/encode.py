@@ -1,18 +1,11 @@
-from pre_processing.bwt import START_CHAR, END_CHAR
+from pre_processing.suffix_array import suffix_array_manber_myers
 
 
 def encode(string: str) -> str:
-    string: str = '{}{}{}'.format(START_CHAR, string, END_CHAR)
-    length: int = len(string)
+    _string = string + '§'
+    sa = suffix_array_manber_myers(_string)
+    return "".join(_string[idx - 1] for idx in sa)
 
-    table: [str] = []
 
-    # get rotations
-    for i in range(length):
-        rotated: str = string[i:] + string[:i]
-        table.append(rotated)
-
-    table = sorted(table)
-    last_column = ''.join([x[-1] for x in table])
-
-    return last_column
+if __name__ == '__main__':
+    print(encode('banana'))
