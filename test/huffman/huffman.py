@@ -1,4 +1,5 @@
 from test.huffman import COMPRESSED_HUFFMAN_DIR_PATH
+from test.huffman import DECOMPRESSED_HUFFMAN_DIR_PATH
 from test.huffman import generate_file_name
 
 from compression.huffman import huffman_encoding
@@ -6,6 +7,7 @@ from compression.huffman import huffman_decoding
 
 from util.file import write_compressed_file
 from util.file import read_compressed_file
+from util.file import write_decompressed_file
 
 import os
 
@@ -32,5 +34,6 @@ def huffman(file_path: str, file_name: str):
     decompressed_data: list[str] = huffman_decoding(compressed_data, tree)
     # convert decompressed_data to text
     _data: str = ''.join([str(item) for item in decompressed_data])
+    write_decompressed_file(DECOMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name, _data)
 
     return os.path.join(COMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name)
