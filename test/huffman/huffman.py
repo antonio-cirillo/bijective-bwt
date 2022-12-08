@@ -19,8 +19,9 @@ def huffman(file_path: str, file_name: str):
     _file = open(os.path.join(file_path, file_name))
     data = _file.read()
 
-    # generate file name and file path of compressed file
-    compressed_file_name: str = generate_file_name(file_name, PRE_PROCESSING)
+    # generate file name of compressed file
+    _file_name: str = os.path.splitext(file_name)[0]
+    compressed_file_name: str = generate_file_name(_file_name, PRE_PROCESSING)
 
     # use huffman encoding
     compressed_data, tree = huffman_encoding(data)
