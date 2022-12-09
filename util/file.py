@@ -41,6 +41,19 @@ def generate_random_file(file_name: str, file_size: int, file_type: str = 'txt')
     return file_path
 
 
+def write_compressed_file_path_folder(file_path: str, file_name: str) -> str:
+    assert '/' not in file_name
+
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.bin")
+    return file_path
+def write_decompressed_file_path_folder(file_path: str, file_name: str) -> str:
+    assert '/' not in file_name
+
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.txt")
+    return file_path
+
 def write_compressed_file(file_path: str, file_name: str, data: str) -> str:
     assert '/' not in file_name
 
