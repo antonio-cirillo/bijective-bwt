@@ -17,7 +17,7 @@ def ae(file_path: str, file_name: str):
 
     # use arithmetic encoding
 
-    interface_compress((file_path+_file_name), output_path)
+    interface_compress((file_path+file_name), output_path)
 
     dec_output_path = write_decompressed_file_path_folder(DECOMPRESSED_ARITHMETIC_CODING_DIR_PATH,compressed_file_name)
 
@@ -29,5 +29,5 @@ def ae(file_path: str, file_name: str):
 
 
 if __name__ == "__main__":
-    ae("file/","pro")
+    ae("file/","pro.txt")
 
