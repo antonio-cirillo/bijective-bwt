@@ -1,15 +1,7 @@
-#
-# Reference arithmetic coding
-# Copyright (c) Project Nayuki
-#
-# https://www.nayuki.io/page/reference-arithmetic-coding
-# https://github.com/nayuki/Reference-arithmetic-coding
-#
-
-
 # ---- Arithmetic coding core classes ----
 
 # Provides the state and behaviors that arithmetic coding encoders and decoders share.
+
 class ArithmeticCoderBase:
 
     # Constructs an arithmetic coder, which initializes the code range.
@@ -33,7 +25,7 @@ class ArithmeticCoderBase:
         self.full_range = 1 << self.num_state_bits
         # The top bit at width num_state_bits, which is 0100...000.
         self.half_range = self.full_range >> 1  # Non-zero
-        # The second highest bit at width num_state_bits, which is 0010...000. This is zero when num_state_bits=1.
+        # The second-highest bit at width num_state_bits, which is 0010...000. This is zero when num_state_bits=1.
         self.quarter_range = self.half_range >> 1  # Can be zero
         # Minimum range (high+1-low) during coding (non-trivial), which is 0010...010.
         self.minimum_range = self.quarter_range + 2  # At least 2
@@ -54,7 +46,7 @@ class ArithmeticCoderBase:
     # Invariants that are true before and after encoding/decoding each symbol
     # (letting full_range = 2^num_state_bits):
     # - 0 <= low <= code <= high < full_range. ('code' exists only in the decoder.)
-    #   Therefore these variables are unsigned integers of num_state_bits bits.
+    #   Therefore, these variables are unsigned integers of num_state_bits bits.
     # - low < 1/2 * full_range <= high.
     #   In other words, they are in different halves of the full range.
     # - (low < 1/4 * full_range) || (high >= 3/4 * full_range).
@@ -62,30 +54,30 @@ class ArithmeticCoderBase:
     # - Let range = high - low + 1, then full_range/4 < minimum_range
     #   <= range <= full_range. These invariants for 'range' essentially
     #   dictate the maximum total that the incoming frequency table can have.
-    def update(self, freqs, symbol):
+    def update(self, frequencies, symbol):
         # State check
         low = self.low
         high = self.high
         if low >= high or (low & self.state_mask) != low or (high & self.state_mask) != high:
             raise AssertionError("Low or high out of range")
-        range = high - low + 1
-        if not (self.minimum_range <= range <= self.full_range):
+        _range = high - low + 1
+        if not (self.minimum_range <= _range <= self.full_range):
             raise AssertionError("Range out of range")
 
         # Frequency table values check
-        total = freqs.get_total()
-        symlow = freqs.get_low(symbol)
-        symhigh = freqs.get_high(symbol)
-        if symlow == symhigh:
+        total = frequencies.get_total()
+        symbol_low = frequencies.get_low(symbol)
+        symbol_high = frequencies.get_high(symbol)
+        if symbol_low == symbol_high:
             raise ValueError("Symbol has zero frequency")
         if total > self.maximum_total:
             raise ValueError("Cannot code symbol because total is too large")
 
         # Update range
-        newlow = low + symlow * range // total
-        newhigh = low + symhigh * range // total - 1
-        self.low = newlow
-        self.high = newhigh
+        new_low = low + symbol_low * _range // total
+        new_high = low + symbol_high * _range // total - 1
+        self.low = new_low
+        self.high = new_high
 
         # While low and high have the same top bit value, shift them out
         while ((self.low ^ self.high) & self.half_range) == 0:
@@ -94,7 +86,7 @@ class ArithmeticCoderBase:
             self.high = ((self.high << 1) & self.state_mask) | 1
         # Now low's top bit must be 0 and high's top bit must be 1
 
-        # While low's top two bits are 01 and high's are 10, delete the second highest bit of both
+        # While low's top two bits are 01 and highs are 10, delete the second-highest bit of both
         while (self.low & ~self.high & self.quarter_range) != 0:
             self.underflow()
             self.low = (self.low << 1) ^ self.half_range
@@ -113,22 +105,22 @@ class ArithmeticCoderBase:
 class ArithmeticEncoder(ArithmeticCoderBase):
 
     # Constructs an arithmetic coding encoder based on the given bit output stream.
-    def __init__(self, numbits, bitout):
+    def __init__(self, numbits, bit_out):
         super(ArithmeticEncoder, self).__init__(numbits)
         # The underlying bit output stream.
-        self.output = bitout
+        self.output = bit_out
         # Number of saved underflow bits. This value can grow without bound.
         self.num_underflow = 0
 
     # Encodes the given symbol based on the given frequency table.
     # This updates this arithmetic coder's state and may write out some bits.
-    def write(self, freqs, symbol):
-        if not isinstance(freqs, CheckedFrequencyTable):
-            freqs = CheckedFrequencyTable(freqs)
-        self.update(freqs, symbol)
+    def write(self, frequencies, symbol):
+        if not isinstance(frequencies, CheckedFrequencyTable):
+            frequencies = CheckedFrequencyTable(frequencies)
+        self.update(frequencies, symbol)
 
     # Terminates the arithmetic coding by flushing any buffered bits, so that the output can be decoded properly.
-    # It is important that this method must be called at the end of the each encoding process.
+    # It is important that this method must be called at the end of the encoding process.
     # Note that this method merely writes data to the underlying output stream but does not close it.
     def finish(self):
         self.output.write(1)
@@ -151,10 +143,10 @@ class ArithmeticDecoder(ArithmeticCoderBase):
 
     # Constructs an arithmetic coding decoder based on the
     # given bit input stream, and fills the code bits.
-    def __init__(self, numbits, bitin):
+    def __init__(self, numbits, bit_in):
         super(ArithmeticDecoder, self).__init__(numbits)
         # The underlying bit input stream.
-        self.input = bitin
+        self.input = bit_in
         # The current raw code bits being buffered, which is always in the range [low, high].
         self.code = 0
         for _ in range(self.num_state_bits):
@@ -162,34 +154,34 @@ class ArithmeticDecoder(ArithmeticCoderBase):
 
     # Decodes the next symbol based on the given frequency table and returns it.
     # Also updates this arithmetic coder's state and may read in some bits.
-    def read(self, freqs):
-        if not isinstance(freqs, CheckedFrequencyTable):
-            freqs = CheckedFrequencyTable(freqs)
+    def read(self, frequencies):
+        if not isinstance(frequencies, CheckedFrequencyTable):
+            frequencies = CheckedFrequencyTable(frequencies)
 
         # Translate from coding range scale to frequency table scale
-        total = freqs.get_total()
+        total = frequencies.get_total()
         if total > self.maximum_total:
             raise ValueError("Cannot decode symbol because total is too large")
-        range = self.high - self.low + 1
+        _range = self.high - self.low + 1
         offset = self.code - self.low
-        value = ((offset + 1) * total - 1) // range
-        assert value * range // total <= offset
+        value = ((offset + 1) * total - 1) // _range
+        assert value * _range // total <= offset
         assert 0 <= value < total
 
-        # A kind of binary search. Find highest symbol such that freqs.get_low(symbol) <= value.
+        # A kind of binary search. Find the highest symbol such that frequencies.get_low(symbol) <= value.
         start = 0
-        end = freqs.get_symbol_limit()
+        end = frequencies.get_symbol_limit()
         while end - start > 1:
             middle = (start + end) >> 1
-            if freqs.get_low(middle) > value:
+            if frequencies.get_low(middle) > value:
                 end = middle
             else:
                 start = middle
         assert start + 1 == end
 
         symbol = start
-        assert freqs.get_low(symbol) * range // total <= offset < freqs.get_high(symbol) * range // total
-        self.update(freqs, symbol)
+        assert frequencies.get_low(symbol) * _range // total <= offset < frequencies.get_high(symbol) * _range // total
+        self.update(frequencies, symbol)
         if not (self.low <= self.code <= self.high):
             raise AssertionError("Code out of range")
         return symbol
@@ -255,14 +247,14 @@ class FrequencyTable:
 class FlatFrequencyTable(FrequencyTable):
 
     # Constructs a flat frequency table with the given number of symbols.
-    def __init__(self, numsyms):
-        if numsyms < 1:
+    def __init__(self, num_symbols):
+        if num_symbols < 1:
             raise ValueError("Number of symbols must be positive")
-        self.numsymbols = numsyms  # Total number of symbols, which is at least 1
+        self.num_symbols = num_symbols  # Total number of symbols, which is at least 1
 
     # Returns the number of symbols in this table, which is at least 1.
     def get_symbol_limit(self):
-        return self.numsymbols
+        return self.num_symbols
 
     # Returns the frequency of the given symbol, which is always 1.
     def get(self, symbol):
@@ -272,7 +264,7 @@ class FlatFrequencyTable(FrequencyTable):
     # Returns the total of all symbol frequencies, which is
     # always equal to the number of symbols in this table.
     def get_total(self):
-        return self.numsymbols
+        return self.num_symbols
 
     # Returns the sum of the frequencies of all the symbols strictly below
     # the given symbol value. The returned value is equal to 'symbol'.
@@ -286,14 +278,14 @@ class FlatFrequencyTable(FrequencyTable):
         self._check_symbol(symbol)
         return symbol + 1
 
-    # Returns silently if 0 <= symbol < numsymbols, otherwise raises an exception.
+    # Returns silently if 0 <= symbol < num_symbols, otherwise raises an exception.
     def _check_symbol(self, symbol):
-        if not (0 <= symbol < self.numsymbols):
+        if not (0 <= symbol < self.num_symbols):
             raise ValueError("Symbol out of range")
 
     # Returns a string representation of this frequency table. The format is subject to change.
     def __str__(self):
-        return "FlatFrequencyTable={}".format(self.numsymbols)
+        return "FlatFrequencyTable={}".format(self.num_symbols)
 
     # Unsupported operation, because this frequency table is immutable.
     def set(self, symbol, freq):
@@ -313,14 +305,14 @@ class SimpleFrequencyTable(FrequencyTable):
     # - SimpleFrequencyTable(sequence):
     #   Builds a frequency table from the given sequence of symbol frequencies.
     #   There must be at least 1 symbol, and no symbol has a negative frequency.
-    # - SimpleFrequencyTable(freqtable):
+    # - SimpleFrequencyTable(frequencies_table):
     #   Builds a frequency table by copying the given frequency table.
-    def __init__(self, freqs):
-        if isinstance(freqs, FrequencyTable):
-            numsym = freqs.get_symbol_limit()
-            self.frequencies = [freqs.get(i) for i in range(numsym)]
+    def __init__(self, frequencies):
+        if isinstance(frequencies, FrequencyTable):
+            num_symbol = frequencies.get_symbol_limit()
+            self.frequencies = [frequencies.get(i) for i in range(num_symbol)]
         else:  # Assume it is a sequence type
-            self.frequencies = list(freqs)  # Make copy
+            self.frequencies = list(frequencies)  # Make copy
 
         # 'frequencies' is a list of the frequency for each symbol.
         # Its length is at least 1, and each element is non-negative.
@@ -388,13 +380,13 @@ class SimpleFrequencyTable(FrequencyTable):
 
     # Recomputes the array of cumulative symbol frequencies.
     def _init_cumulative(self):
-        cumul = [0]
-        sum = 0
+        cumulative = [0]
+        _sum = 0
         for freq in self.frequencies:
-            sum += freq
-            cumul.append(sum)
-        assert sum == self.total
-        self.cumulative = cumul
+            _sum += freq
+            cumulative.append(_sum)
+        assert _sum == self.total
+        self.cumulative = cumulative
 
     # Returns silently if 0 <= symbol < len(frequencies), otherwise raises an exception.
     def _check_symbol(self, symbol):
@@ -410,22 +402,22 @@ class SimpleFrequencyTable(FrequencyTable):
         return result
 
 
-# A wrapper that checks the preconditions (arguments) and postconditions (return value) of all
+# A wrapper that checks the preconditions (arguments) and post_conditions (return value) of all
 # the frequency table methods. Useful for finding faults in a frequency table implementation.
 class CheckedFrequencyTable(FrequencyTable):
 
-    def __init__(self, freqtab):
+    def __init__(self, frequencies_table):
         # The underlying frequency table that holds the data
-        self.freqtable = freqtab
+        self.frequencies_table = frequencies_table
 
     def get_symbol_limit(self):
-        result = self.freqtable.get_symbol_limit()
+        result = self.frequencies_table.get_symbol_limit()
         if result <= 0:
             raise AssertionError("Non-positive symbol limit")
         return result
 
     def get(self, symbol):
-        result = self.freqtable.get(symbol)
+        result = self.frequencies_table.get(symbol)
         if not self._is_symbol_in_range(symbol):
             raise AssertionError("ValueError expected")
         if result < 0:
@@ -433,43 +425,43 @@ class CheckedFrequencyTable(FrequencyTable):
         return result
 
     def get_total(self):
-        result = self.freqtable.get_total()
+        result = self.frequencies_table.get_total()
         if result < 0:
             raise AssertionError("Negative total frequency")
         return result
 
     def get_low(self, symbol):
         if self._is_symbol_in_range(symbol):
-            low = self.freqtable.get_low(symbol)
-            high = self.freqtable.get_high(symbol)
-            if not (0 <= low <= high <= self.freqtable.get_total()):
+            low = self.frequencies_table.get_low(symbol)
+            high = self.frequencies_table.get_high(symbol)
+            if not (0 <= low <= high <= self.frequencies_table.get_total()):
                 raise AssertionError("Symbol low cumulative frequency out of range")
             return low
         else:
-            self.freqtable.get_low(symbol)
+            self.frequencies_table.get_low(symbol)
             raise AssertionError("ValueError expected")
 
     def get_high(self, symbol):
         if self._is_symbol_in_range(symbol):
-            low = self.freqtable.get_low(symbol)
-            high = self.freqtable.get_high(symbol)
-            if not (0 <= low <= high <= self.freqtable.get_total()):
+            low = self.frequencies_table.get_low(symbol)
+            high = self.frequencies_table.get_high(symbol)
+            if not (0 <= low <= high <= self.frequencies_table.get_total()):
                 raise AssertionError("Symbol high cumulative frequency out of range")
             return high
         else:
-            self.freqtable.get_high(symbol)
+            self.frequencies_table.get_high(symbol)
             raise AssertionError("ValueError expected")
 
     def __str__(self):
-        return "CheckedFrequencyTable (" + str(self.freqtable) + ")"
+        return "CheckedFrequencyTable (" + str(self.frequencies_table) + ")"
 
     def set(self, symbol, freq):
-        self.freqtable.set(symbol, freq)
+        self.frequencies_table.set(symbol, freq)
         if not self._is_symbol_in_range(symbol) or freq < 0:
             raise AssertionError("ValueError expected")
 
     def increment(self, symbol):
-        self.freqtable.increment(symbol)
+        self.frequencies_table.increment(symbol)
         if not self._is_symbol_in_range(symbol):
             raise AssertionError("ValueError expected")
 
@@ -483,30 +475,30 @@ class CheckedFrequencyTable(FrequencyTable):
 # the total number of bits is always a multiple of 8. The bits are read in big endian.
 class BitInputStream:
 
-    # Constructs a bit input stream based on the given byte input stream.
+    # Constructs a bit of input stream based on the given byte input stream.
     def __init__(self, inp):
         # The underlying byte stream to read from
         self.input = inp
         # Either in the range [0x00, 0xFF] if bits are available, or -1 if end of stream is reached
-        self.currentbyte = 0
+        self.current_byte = 0
         # Number of remaining bits in the current byte, always between 0 and 7 (inclusive)
-        self.numbitsremaining = 0
+        self.num_bits_remaining = 0
 
     # Reads a bit from this stream. Returns 0 or 1 if a bit is available, or -1 if
     # the end of stream is reached. The end of stream always occurs on a byte boundary.
     def read(self):
-        if self.currentbyte == -1:
+        if self.current_byte == -1:
             return -1
-        if self.numbitsremaining == 0:
+        if self.num_bits_remaining == 0:
             temp = self.input.read(1)
             if len(temp) == 0:
-                self.currentbyte = -1
+                self.current_byte = -1
                 return -1
-            self.currentbyte = temp[0]
-            self.numbitsremaining = 8
-        assert self.numbitsremaining > 0
-        self.numbitsremaining -= 1
-        return (self.currentbyte >> self.numbitsremaining) & 1
+            self.current_byte = temp[0]
+            self.num_bits_remaining = 8
+        assert self.num_bits_remaining > 0
+        self.num_bits_remaining -= 1
+        return (self.current_byte >> self.num_bits_remaining) & 1
 
     # Reads a bit from this stream. Returns 0 or 1 if a bit is available, or raises an EOFError
     # if the end of stream is reached. The end of stream always occurs on a byte boundary.
@@ -520,8 +512,8 @@ class BitInputStream:
     # Closes this stream and the underlying input stream.
     def close(self):
         self.input.close()
-        self.currentbyte = -1
-        self.numbitsremaining = 0
+        self.current_byte = -1
+        self.num_bits_remaining = 0
 
 
 # A stream where bits can be written to. Because they are written to an underlying
@@ -529,28 +521,28 @@ class BitInputStream:
 # The bits are written in big endian.
 class BitOutputStream:
 
-    # Constructs a bit output stream based on the given byte output stream.
+    # Constructs a bit of output stream based on the given byte output stream.
     def __init__(self, out):
         self.output = out  # The underlying byte stream to write to
-        self.currentbyte = 0  # The accumulated bits for the current byte, always in the range [0x00, 0xFF]
-        self.numbitsfilled = 0  # Number of accumulated bits in the current byte, always between 0 and 7 (inclusive)
+        self.current_byte = 0  # The accumulated bits for the current byte, always in the range [0x00, 0xFF]
+        self.num_bits_filled = 0  # Number of accumulated bits in the current byte, always between 0 and 7 (inclusive)
 
     # Writes a bit to the stream. The given bit must be 0 or 1.
     def write(self, b):
         if b not in (0, 1):
             raise ValueError("Argument must be 0 or 1")
-        self.currentbyte = (self.currentbyte << 1) | b
-        self.numbitsfilled += 1
-        if self.numbitsfilled == 8:
-            towrite = bytes((self.currentbyte,))
+        self.current_byte = (self.current_byte << 1) | b
+        self.num_bits_filled += 1
+        if self.num_bits_filled == 8:
+            towrite = bytes((self.current_byte,))
             self.output.write(towrite)
-            self.currentbyte = 0
-            self.numbitsfilled = 0
+            self.current_byte = 0
+            self.num_bits_filled = 0
 
     # Closes this stream and the underlying output stream. If called when this
     # bit stream is not at a byte boundary, then the minimum number of "0" bits
     # (between 0 and 7 of them) are written as padding to reach the next byte boundary.
     def close(self):
-        while self.numbitsfilled != 0:
+        while self.num_bits_filled != 0:
             self.write(0)
         self.output.close()
