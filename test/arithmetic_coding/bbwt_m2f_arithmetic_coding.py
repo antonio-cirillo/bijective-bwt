@@ -1,0 +1,66 @@
+from test.arithmetic_coding import COMPRESSED_ARITHMETIC_CODING_DIR_PATH
+from test.arithmetic_coding import DECOMPRESSED_ARITHMETIC_CODING_DIR_PATH
+from test.arithmetic_coding import generate_file_name
+
+from pre_processing.bbwt_cfl.encode import encode as bbwt_encode
+from pre_processing.bbwt_cfl.decode import decode as bbwt_decode
+
+from pre_processing.mtf import m2f_e
+from pre_processing.mtf import m2f_d
+
+from compression.arithmetic_coding import arithmetic_encoding
+from compression.arithmetic_coding import arithmetic_decoding
+
+from util.file import read_in_chunks
+from util.file import write_decompressed_file
+from util.file import write_compressed_file_path_folder
+
+import os
+import io
+
+PRE_PROCESSING: str = "bbwt"
+CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE
+
+
+def bbwt_m2f_arithmetic_coding(file_path: str, file_name: str, alphabet: list[str]) -> str:
+    # open and read file
+    _file = open(os.path.join(file_path, file_name))
+    # generate file name and file path of compressed file
+    _file_name: str = os.path.splitext(file_name)[0]
+    compressed_file_name: str = generate_file_name(_file_name, PRE_PROCESSING)
+    compressed_file_path: str = write_compressed_file_path_folder(COMPRESSED_ARITHMETIC_CODING_DIR_PATH,
+                                                                  compressed_file_name)
+    # clone alphabet
+    _alphabet = alphabet[:]
+
+    # apply bbwt for each chunk
+    bbwt_encoded = ""
+    for chunk in read_in_chunks(_file, chunk_size=CHUNK_SIZE):
+        # use bbwt encoding
+        bbwt_encoded_chunk = bbwt_encode(chunk)
+        bbwt_encoded += bbwt_encoded_chunk
+    # use m2f encoding
+    m2f_encoded = m2f_e(bbwt_encoded, _alphabet)
+    # convert m2f encoding into a string
+    m2f_encoded_string = ""
+    for m2f_item in m2f_encoded:
+        m2f_encoded_string += str(m2f_item) + ' '
+    m2f_encoded_string = m2f_encoded_string[:-1].encode()
+    # use arithmetic encoding and write compressed file
+    arithmetic_encoding(m2f_encoded_string, compressed_file_path)
+
+    # read file and use arithmetic decoding
+    decompressed_data = arithmetic_decoding(compressed_file_path)
+    # convert decompressed_data into a integer list
+    decompressed_data = list(map(int, decompressed_data.split(" ")))
+    # init _alphabet
+    _alphabet = alphabet[:]
+    # use m2f decoding
+    m2f_decoded = m2f_d(decompressed_data, _alphabet)
+    # use bbwt decoding for each chunk
+    for chunk in [m2f_decoded[i:i + CHUNK_SIZE]
+                  for i in range(0, len(m2f_decoded), CHUNK_SIZE)]:
+        bbwt_decoded_chunk = bbwt_decode(chunk)
+        write_decompressed_file(DECOMPRESSED_ARITHMETIC_CODING_DIR_PATH, compressed_file_name, bbwt_decoded_chunk)
+
+    return compressed_file_path
