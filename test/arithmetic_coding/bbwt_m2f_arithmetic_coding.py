@@ -18,7 +18,7 @@ from util.file import write_compressed_file_path_folder
 import os
 import io
 
-PRE_PROCESSING: str = "bbwt"
+PRE_PROCESSING: str = "bbwt_m2f"
 CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE
 
 
