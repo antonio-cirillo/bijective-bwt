@@ -1,4 +1,5 @@
 import bitarray
+import pickle
 import random
 import string
 import os
@@ -67,6 +68,25 @@ def write_compressed_file(file_path: str, file_name: str, data: str) -> str:
         file.write(data_binary)
 
     return file_path
+
+
+def write_pickle(file_path: str, file_name: str, data) -> str:
+    assert '/' not in file_name
+
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.bin")
+    with open(file_path, 'wb') as file:
+        pickle.dump(data, file)
+
+    return file_path
+
+
+def read_pickle(file_path: str, file_name: str):
+    assert '/' not in file_name
+
+    file_path: str = path.join(file_path, f"{file_name}.bin")
+    with open(file_path, 'rb') as file:
+        return pickle.load(file)
 
 
 def read_compressed_file(file_path: str, file_name: str) -> str:
