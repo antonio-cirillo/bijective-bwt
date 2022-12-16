@@ -16,6 +16,15 @@ from test.lzw.bbwt_m2f_lzw import bbwt_m2f_lzw
 from test.lzw.bwt_m2f_rle_lzw import bwt_m2f_rle_lzw
 from test.lzw.bbwt_m2f_rle_lzw import bbwt_m2f_rle_lzw
 
+
+from test.deflate.deflate import deflate
+from test.deflate.bwt_m2f_deflate import bwt_m2f_deflate
+from test.deflate.bbwt_m2f_deflate import bbwt_m2f_deflate
+from test.deflate.bwt_m2f_rle_deflate import bwt_m2f_rle_deflate
+from test.deflate.bbwt_m2f_rle_deflate import bbwt_m2f_rle_deflate
+from test.deflate.bbwt_deflate import bbwt_deflate
+
+
 import os
 
 # declare path of test files
@@ -25,6 +34,7 @@ ALPHABET: list[chr] = [chr(i) for i in range(128)]
 
 # for each file inside files directory
 for file_name in os.listdir(PATH_DIR_TEST_FILES):
+    '''
     # HUFFMAN TEST
     huffman(PATH_DIR_TEST_FILES, file_name)
     bwt_m2f_huffman(PATH_DIR_TEST_FILES, file_name, ALPHABET)
@@ -45,3 +55,11 @@ for file_name in os.listdir(PATH_DIR_TEST_FILES):
     bbwt_m2f_lzw(PATH_DIR_TEST_FILES, file_name, ALPHABET)
     bwt_m2f_rle_lzw(PATH_DIR_TEST_FILES, file_name, ALPHABET)
     bbwt_m2f_rle_lzw(PATH_DIR_TEST_FILES, file_name, ALPHABET)
+    '''
+     # DEFLATE TEST
+    #deflate(PATH_DIR_TEST_FILES, file_name)
+    bbwt_deflate(PATH_DIR_TEST_FILES,file_name)
+    #bwt_m2f_deflate(PATH_DIR_TEST_FILES, file_name, ALPHABET)
+    #bbwt_m2f_deflate(PATH_DIR_TEST_FILES, file_name, ALPHABET)
+    #bwt_m2f_rle_deflate(PATH_DIR_TEST_FILES, file_name, ALPHABET)
+    #bbwt_m2f_rle_deflate(PATH_DIR_TEST_FILES, file_name, ALPHABET)
