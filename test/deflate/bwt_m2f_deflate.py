@@ -12,9 +12,9 @@ from compression.deflate import deflate as deflate_encoding
 from compression.deflate import inflate as deflate_decoding
 
 from util.file import read_in_chunks
+from util.file import write_compressed_file_bytes
+from util.file import read_compressed_file_bytes
 from util.file import write_decompressed_file
-from util.file import write_pickle
-from util.file import read_pickle
 
 import os
 import io
@@ -43,11 +43,13 @@ def bwt_m2f_deflate(file_path: str, file_name: str, alphabet: list[str]) -> str:
         # append chunk
         m2f_encoded_chunks += m2f_encoded_chunk
     # use deflate encoding
+    m2f_encoded_chunks = bytes(m2f_encoded_chunks)
     compressed_data = deflate_encoding(m2f_encoded_chunks)
+
     # write compressed file
-    write_pickle(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name, compressed_data)
+    write_compressed_file_bytes(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name, compressed_data)
     # read compressed file
-    compressed_data = read_pickle(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name)
+    compressed_data: str = read_compressed_file_bytes(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name)
 
     # use deflate decoding
     decompressed_data: str = deflate_decoding(compressed_data)
