@@ -15,6 +15,7 @@ from util.file import read_in_chunks
 from util.file import write_compressed_file
 from util.file import read_compressed_file
 from util.file import write_decompressed_file
+from util.file_compare import compression_ratio_from_file
 
 import os
 import io
@@ -23,7 +24,7 @@ PRE_PROCESSING: str = "bbwt_m2f"
 CHUNK_SIZE = io.DEFAULT_BUFFER_SIZE
 
 
-def bbwt_m2f_huffman(file_path: str, file_name: str, alphabet: list[str]) -> str:
+def bbwt_m2f_huffman(file_path: str, file_name: str, alphabet: list[str], chunk_size=CHUNK_SIZE) -> str:
     # open file
     _file = open(os.path.join(file_path, file_name))
     # generate file name of compressed file
@@ -35,7 +36,7 @@ def bbwt_m2f_huffman(file_path: str, file_name: str, alphabet: list[str]) -> str
 
     # apply bbwt for each chunk
     bbwt_encoded = ""
-    for chunk in read_in_chunks(_file, chunk_size=CHUNK_SIZE):
+    for chunk in read_in_chunks(_file, chunk_size=chunk_size):
         # use bbwt encoding
         bbwt_encoded_chunk = bbwt_encode(chunk)
         bbwt_encoded += bbwt_encoded_chunk
@@ -45,7 +46,7 @@ def bbwt_m2f_huffman(file_path: str, file_name: str, alphabet: list[str]) -> str
     compressed_data, tree = huffman_encoding(m2f_encoded)
 
     # write compressed file
-    write_compressed_file(COMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name, compressed_data)
+    compressed_file_path = write_compressed_file(COMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name, compressed_data)
     # read compressed file
     compressed_data = read_compressed_file(COMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name)
 
@@ -56,9 +57,15 @@ def bbwt_m2f_huffman(file_path: str, file_name: str, alphabet: list[str]) -> str
     # use m2f decoding
     m2f_decoded = m2f_d(decompressed_data, _alphabet)
     # use bbwt decoding for each chunk
-    for chunk in [m2f_decoded[i:i + CHUNK_SIZE]
-                  for i in range(0, len(m2f_decoded), CHUNK_SIZE)]:
+    for chunk in [m2f_decoded[i:i + chunk_size]
+                  for i in range(0, len(m2f_decoded), chunk_size)]:
         bbwt_decoded_chunk = bbwt_decode(chunk)
         write_decompressed_file(DECOMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name, bbwt_decoded_chunk)
 
-    return os.path.join(DECOMPRESSED_HUFFMAN_DIR_PATH, compressed_file_name)
+    compression_ratio = compression_ratio_from_file(os.path.join(file_path, file_name),
+                                                    compressed_file_path)
+    result = dict()
+    result["PIPELINE"] = PRE_PROCESSING + '_huffman'
+    result["RATIO"] = compression_ratio
+    result["PATH"] = compressed_file_path
+    return result
