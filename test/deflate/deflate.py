@@ -5,9 +5,9 @@ from test.deflate import generate_file_name
 from compression.deflate import deflate as deflate_encoding
 from compression.deflate import inflate as deflate_decoding
 
+from util.file import write_compressed_file_bytes
+from util.file import read_compressed_file_bytes
 from util.file import write_decompressed_file
-from util.file import write_pickle
-from util.file import read_pickle
 
 
 import os
@@ -29,9 +29,9 @@ def deflate(file_path: str, file_name: str):
     compressed_data = deflate_encoding(data)
 
     # write compressed file
-    write_pickle(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name, compressed_data)
+    write_compressed_file_bytes(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name, compressed_data)
     # read compressed file
-    compressed_data: str = read_pickle(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name)
+    compressed_data: str = read_compressed_file_bytes(COMPRESSED_DEFLATE_DIR_PATH, compressed_file_name)
 
     # use deflate decoding
     decompressed_data = deflate_decoding(compressed_data)
