@@ -17,7 +17,6 @@ class Node:
         self.code = ''
 
 
-""" A helper function to print the codes of symbols by traveling Huffman Tree"""
 codes = dict()
 
 
@@ -104,6 +103,8 @@ def huffman_encoding(data):
     _huffman_encoding = calculate_codes(nodes[0])
     total_gain(data, _huffman_encoding)
     encoded_output = output_encoded(data, _huffman_encoding)
+    global codes
+    codes = dict()
     return encoded_output, nodes[0]
 
 
