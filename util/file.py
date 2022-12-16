@@ -70,6 +70,17 @@ def write_compressed_file(file_path: str, file_name: str, data: str) -> str:
     return file_path
 
 
+def write_compressed_file_bytes(file_path: str, file_name: str, data: bytes) -> str:
+    assert '/' not in file_name
+
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.bin")
+    with open(file_path, 'wb') as file:
+        file.write(data)
+
+    return file_path
+
+
 def write_pickle(file_path: str, file_name: str, data) -> str:
     assert '/' not in file_name
 
@@ -99,6 +110,17 @@ def read_compressed_file(file_path: str, file_name: str) -> str:
         data_binary = _to_binary(data)
 
     return data_binary
+
+
+def read_compressed_file_bytes(file_path: str, file_name: str) -> bytes:
+    assert '/' not in file_name
+
+    os.makedirs(file_path, exist_ok=True)
+    file_path: str = path.join(file_path, f"{file_name}.bin")
+    with open(file_path, 'rb') as file:
+        data = file.read()
+
+    return data
 
 
 def read_in_chunks(file_object, chunk_size=1024):
