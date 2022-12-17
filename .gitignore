@@ -2,6 +2,7 @@
 /files/*
 /compressed/*
 /decompressed/*
+/images/*
 
 /venv/
 /.idea/
