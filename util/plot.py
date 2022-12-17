@@ -4,9 +4,9 @@ import os
 
 
 def plot_different_chunk_size(file_name: str, chunk_size: int, results: [dict]):
-    os.makedirs('image', exist_ok=True)
+    os.makedirs('images', exist_ok=True)
     _file_name = f'{file_name}_{chunk_size}.jpg'
-    file_path: str = os.path.join('image', _file_name)
+    file_path: str = os.path.join('images', _file_name)
 
     # create data
     ratios = [r["RATIO"] for r in results]
@@ -41,9 +41,9 @@ def plot_different_chunk_size(file_name: str, chunk_size: int, results: [dict]):
 
 
 def plot_different_pipeline(file_name: str, pipeline: str, results: [dict]):
-    os.makedirs('image', exist_ok=True)
+    os.makedirs('images', exist_ok=True)
     _file_name = f'{file_name}_{pipeline}.jpg'
-    file_path: str = os.path.join('image', _file_name)
+    file_path: str = os.path.join('images', _file_name)
 
     # create data
     ratios = [r["RATIO"] for r in results]
