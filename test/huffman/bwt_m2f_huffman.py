@@ -29,7 +29,7 @@ def bwt_m2f_huffman(file_path: str, file_name: str, alphabet: list[str], chunk_s
     _file = open(os.path.join(file_path, file_name))
     # generate file name of compressed file
     _file_name: str = os.path.splitext(file_name)[0]
-    compressed_file_name: str = generate_file_name(_file_name, PRE_PROCESSING)
+    compressed_file_name: str = generate_file_name(_file_name, PRE_PROCESSING, chunk_size)
 
     # clone alphabet
     _alphabet = alphabet[:] + ['§']
