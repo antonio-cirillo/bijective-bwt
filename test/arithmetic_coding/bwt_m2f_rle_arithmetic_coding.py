@@ -17,6 +17,7 @@ from compression.arithmetic_coding import arithmetic_decoding
 from util.file import read_in_chunks
 from util.file import write_decompressed_file
 from util.file import write_compressed_file_path_folder
+from util.file_compare import compression_ratio_from_file
 
 import os
 import io
@@ -30,12 +31,12 @@ def _convert_str_in_tuple(string: str) -> (int, int):
     return int(_strings[0]), int(_strings[1])
 
 
-def bwt_m2f_rle_arithmetic_coding(file_path: str, file_name: str, alphabet: list[str]) -> str:
+def bwt_m2f_rle_arithmetic_coding(file_path: str, file_name: str, alphabet: list[str], chunk_size=CHUNK_SIZE) -> dict:
     # open and read file
     _file = open(os.path.join(file_path, file_name))
     # generate file name and file path of compressed file
     _file_name: str = os.path.splitext(file_name)[0]
-    compressed_file_name: str = generate_file_name(_file_name, PRE_PROCESSING)
+    compressed_file_name: str = generate_file_name(_file_name, PRE_PROCESSING, chunk_size)
     compressed_file_path: str = write_compressed_file_path_folder(COMPRESSED_ARITHMETIC_CODING_DIR_PATH,
                                                                   compressed_file_name)
     # clone alphabet
@@ -43,7 +44,7 @@ def bwt_m2f_rle_arithmetic_coding(file_path: str, file_name: str, alphabet: list
 
     # apply bwt for each chunk
     bwt_encoded = ""
-    for chunk in read_in_chunks(_file, chunk_size=CHUNK_SIZE):
+    for chunk in read_in_chunks(_file, chunk_size=chunk_size):
         # use bwt encoding
         bwt_encoded_chunk = bwt_encode(chunk)
         bwt_encoded += bwt_encoded_chunk
@@ -71,9 +72,15 @@ def bwt_m2f_rle_arithmetic_coding(file_path: str, file_name: str, alphabet: list
     # use m2f decoding
     m2f_decoded = m2f_d(rle_decoded, _alphabet)
     # use bwt decoding for each chunk
-    for chunk in [m2f_decoded[i:i + CHUNK_SIZE + 1]
-                  for i in range(0, len(m2f_decoded), CHUNK_SIZE + 1)]:
+    for chunk in [m2f_decoded[i:i + chunk_size + 1]
+                  for i in range(0, len(m2f_decoded), chunk_size + 1)]:
         bwt_decoded_chunk = bwt_decode(chunk)
         write_decompressed_file(DECOMPRESSED_ARITHMETIC_CODING_DIR_PATH, compressed_file_name, bwt_decoded_chunk)
 
-    return compressed_file_path
+    compression_ratio = compression_ratio_from_file(os.path.join(file_path, file_name),
+                                                    compressed_file_path)
+    result = dict()
+    result["PIPELINE"] = PRE_PROCESSING + '_arithmetic_coding'
+    result["RATIO"] = compression_ratio
+    result["PATH"] = compressed_file_path
+    return result
