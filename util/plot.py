@@ -3,9 +3,9 @@ import numpy as np
 import os
 
 
-def plot_different_chunk_size(file_name: str, chunk_size: int, results: [dict]):
+def plot_different_chunk_size(file_name: str, algorithm: str, chunk_size: int, results: [dict]):
     os.makedirs('images', exist_ok=True)
-    _file_name = f'{file_name}_{chunk_size}.jpg'
+    _file_name = f'{file_name}_{chunk_size}_{algorithm}.jpg'
     file_path: str = os.path.join('images', _file_name)
 
     # create data
