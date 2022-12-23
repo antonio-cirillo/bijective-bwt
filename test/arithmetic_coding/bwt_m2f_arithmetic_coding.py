@@ -50,6 +50,7 @@ def bwt_m2f_arithmetic_coding(file_path: str, file_name: str, alphabet: list[str
     # use arithmetic encoding and write compressed file
     arithmetic_encoding(m2f_encoded_string, compressed_file_path)
 
+    """
     # read file and use arithmetic decoding
     decompressed_data = arithmetic_decoding(compressed_file_path)
     # convert decompressed_data into a integer list
@@ -63,7 +64,7 @@ def bwt_m2f_arithmetic_coding(file_path: str, file_name: str, alphabet: list[str
                   for i in range(0, len(m2f_decoded), chunk_size + 1)]:
         bwt_decoded_chunk = bwt_decode(chunk)
         write_decompressed_file(DECOMPRESSED_ARITHMETIC_CODING_DIR_PATH, compressed_file_name, bwt_decoded_chunk)
-
+    """
     compression_ratio = compression_ratio_from_file(os.path.join(file_path, file_name),
                                                     compressed_file_path)
     result = dict()

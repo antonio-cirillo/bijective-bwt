@@ -60,6 +60,7 @@ def bbwt_m2f_rle_arithmetic_coding(file_path: str, file_name: str, alphabet: lis
     # use arithmetic encoding and write compressed file
     arithmetic_encoding(rle_encoded_string, compressed_file_path)
 
+    """
     # read file and use arithmetic decoding
     decompressed_data = arithmetic_decoding(compressed_file_path)
     # convert decompressed_data into a tuple list
@@ -76,7 +77,7 @@ def bbwt_m2f_rle_arithmetic_coding(file_path: str, file_name: str, alphabet: lis
                   for i in range(0, len(m2f_decoded), chunk_size)]:
         bbwt_decoded_chunk = bbwt_decode(chunk)
         write_decompressed_file(DECOMPRESSED_ARITHMETIC_CODING_DIR_PATH, compressed_file_name, bbwt_decoded_chunk)
-
+    """
     compression_ratio = compression_ratio_from_file(os.path.join(file_path, file_name),
                                                     compressed_file_path)
     result = dict()
