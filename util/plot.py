@@ -19,7 +19,10 @@ def plot_different_chunk_size(file_name: str, algorithm: str, chunk_size: int, r
     # rotation of the bar names
     plt.xticks(x_pos, pipelines, rotation=90)
     # custom the subplot layout
-    plt.subplots_adjust(bottom=0.4, top=0.9)
+    if algorithm == 'arithmetic_code':
+        plt.subplots_adjust(bottom=0.6, top=0.9)
+    else:
+        plt.subplots_adjust(bottom=0.4, top=0.9)
     # enable grid
     plt.grid(True)
 
@@ -47,7 +50,7 @@ def plot_different_pipeline(file_name: str, pipeline: str, results: [dict]):
 
     # create data
     ratios = [r["RATIO"] for r in results]
-    chunks = [1024 * pow(2, i) for i in range(7)]
+    chunks = [(1024 * 4) * pow(2, i) for i in range(7)]
     x_pos = np.arange(len(chunks))
 
     # create bars
