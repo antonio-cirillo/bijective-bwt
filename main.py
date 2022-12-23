@@ -29,7 +29,7 @@ PATH_DIR_TEST_FILES = os.path.join(os.getcwd(), "files")
 # declare alphabet
 ALPHABET: list[chr] = [chr(i) for i in range(128)]
 # declare chunk size test
-CHUNK_SIZE_BASE = 1024
+CHUNK_SIZE_BASE = 1024 * 4
 
 
 def test_different_pipeline(test: bool):
@@ -136,5 +136,6 @@ def test_different_chunk(test: bool):
             print(f"Plot result with pipeline: {pipeline}")
             plot_different_pipeline(file_name, pipeline, _results)
 
+
 if __name__ == '__main__':
-    test_different_chunk(True)
+    test_different_chunk(False)
