@@ -4,7 +4,7 @@ from test.huffman.bbwt_m2f_huffman import bbwt_m2f_huffman
 from test.huffman.bwt_m2f_rle_huffman import bwt_m2f_rle_huffman
 from test.huffman.bbwt_m2f_rle_huffman import bbwt_m2f_rle_huffman
 
-from test.arithmetic_coding.arithmetic_coding import arithmetic_coding
+from test.arithmetic_coding_2.arithmetic_coding import arithmetic_coding
 from test.arithmetic_coding.bwt_m2f_arithmetic_coding import bwt_m2f_arithmetic_coding
 from test.arithmetic_coding.bbwt_m2f_arithmetic_coding import bbwt_m2f_arithmetic_coding
 from test.arithmetic_coding.bwt_m2f_rle_arithmetic_coding import bwt_m2f_rle_arithmetic_coding
@@ -138,4 +138,8 @@ def test_different_chunk(test: bool):
 
 
 if __name__ == '__main__':
-    test_different_chunk(False)
+    import sys
+    from tqdm import trange
+    #test_different_chunk(False)
+    arithmetic_coding(PATH_DIR_TEST_FILES, "filepiccolo.txt")
+
