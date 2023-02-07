@@ -4,6 +4,7 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
+#include <map>
 
 #include "bwtEncode.hpp"
 #include "bwtDecode.hpp"
@@ -36,8 +37,15 @@
 #define RLE_BWT_M2F_RLE_ARITHMETIC_CODE     11
 #define RLE_BBWT_M2F_RLE_HUFFMAN            12
 #define RLE_BBWT_M2F_RLE_ARITHMETIC_CODE    13
+#define LZW_HUFFMAN                         14
+#define BWT_M2F_LZW_HUFFMAN                 15
+#define BBWT_M2F_LZW_HUFFMAN                16
+#define BWT_M2F_RLE_LZW_HUFFMAN             17
+#define BBWT_M2F_RLE_LZW_HUFFMAN            18
+#define RLE_BWT_M2F_RLE_LZW_HUFFMAN         19
+#define RLE_BBWT_M2F_RLE_LZW_HUFFMAN        20
 
-#define N_PIPELINES 14 
+#define N_PIPELINES 21
 
 #define CHUNK_SIZE 50000
 
@@ -64,6 +72,89 @@ bool compareFiles(const std::string& p1, const std::string& p2) {
                     std::istreambuf_iterator<char>(f2.rdbuf()));
 }
 
+template <typename Iterator>
+Iterator lzwCompress(const std::string &uncompressed, Iterator result) {
+  // Build the dictionary.
+  int dictSize = 256;
+  std::map<std::string,int> dictionary;
+  for (int i = 0; i < 256; i++)
+    dictionary[std::string(1, i)] = i;
+  
+  std::string w;
+  for (std::string::const_iterator it = uncompressed.begin();
+       it != uncompressed.end(); ++it) {
+    char c = *it;
+    std::string wc = w + c;
+    if (dictionary.count(wc))
+      w = wc;
+    else {
+      *result++ = dictionary[w];
+      // Add wc to the dictionary.
+      dictionary[wc] = dictSize++;
+      w = std::string(1, c);
+    }
+  }
+  
+  // Output the code for w.
+  if (!w.empty())
+    *result++ = dictionary[w];
+  return result;
+}
+
+// Decompress a list of output ks to a string.
+// "begin" and "end" must form a valid range of ints
+template <typename Iterator>
+std::string lzwDecompress(Iterator begin, Iterator end) {
+  // Build the dictionary.
+  int dictSize = 256;
+  std::map<int,std::string> dictionary;
+  for (int i = 0; i < 256; i++)
+    dictionary[i] = std::string(1, i);
+  
+  std::string w(1, *begin++);
+  std::string result = w;
+  std::string entry;
+  for ( ; begin != end; begin++) {
+    int k = *begin;
+    if (dictionary.count(k))
+      entry = dictionary[k];
+    else if (k == dictSize)
+      entry = w + w[0];
+    else
+      throw "Bad compressed k";
+    
+    result += entry;
+    
+    // Add w+entry[0] to the dictionary.
+    dictionary[dictSize++] = w + entry[0];
+    
+    w = entry;
+  }
+  return result;
+}
+
+vector<int> stringToIntVector(const string& str, const char& ch) {
+    string next;
+    vector<int> result;
+    // For each character in the string
+    for (string::const_iterator it = str.begin(); it != str.end(); it++) {
+        // If we've hit the terminal character
+        if (*it == ch) {
+            // If we have some characters accumulated
+            if (!next.empty()) {
+                // Add them to the result vector
+                result.push_back(stoi(next));
+                next.clear();
+            }
+        } else {
+            // Accumulate the next character into the sequence
+            next += *it;
+        }
+    }
+    if (!next.empty())
+         result.push_back(stoi(next));
+    return result;
+}
 
 int main(int argc, char* argv[]) {
 
@@ -97,7 +188,14 @@ int main(int argc, char* argv[]) {
             RLE_BWT_M2F_RLE_HUFFMAN,
             RLE_BWT_M2F_RLE_ARITHMETIC_CODE,
             RLE_BBWT_M2F_RLE_HUFFMAN,
-            RLE_BBWT_M2F_RLE_ARITHMETIC_CODE 
+            RLE_BBWT_M2F_RLE_ARITHMETIC_CODE,
+            LZW_HUFFMAN,
+            BWT_M2F_LZW_HUFFMAN,
+            BBWT_M2F_LZW_HUFFMAN,
+            BWT_M2F_RLE_LZW_HUFFMAN,
+            BBWT_M2F_RLE_LZW_HUFFMAN,
+            RLE_BWT_M2F_RLE_LZW_HUFFMAN,
+            RLE_BBWT_M2F_RLE_LZW_HUFFMAN,
         };
 
         int indexPipeline;
@@ -392,6 +490,161 @@ int main(int argc, char* argv[]) {
                         break;
                     }
 
+                    case LZW_HUFFMAN: {
+                        cout << "Pipeline: LZW -> HUFFMAN" << endl;
+                        vector<int> compressed;
+                        lzwCompress(data, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
+                    case BWT_M2F_LZW_HUFFMAN: {
+                        cout << "Pipeline: BWT -> M2F -> LZW -> Huffman" << endl;
+                        unsigned long size = data.size();
+                        unsigned long nPerfectChunk = size / CHUNK_SIZE;
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bwt_encoded = bwtEncode(data.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bwt_encoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bwt_encoded = bwtEncode(data.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bwt_encoded;
+                        }
+                        MTF m2f;
+                        output = m2f.encode(output);
+                        vector<int> compressed; 
+                        lzwCompress(output, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
+                    case BBWT_M2F_LZW_HUFFMAN: {
+                        cout << "Pipeline: Bijective BWT -> M2F -> LZW -> Huffman" << endl;
+                        unsigned long size = data.size();
+                        unsigned long nPerfectChunk = size / CHUNK_SIZE;
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bbwt_encoded = bbwtEncode(data.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bbwt_encoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bbwt_encoded = bbwtEncode(data.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bbwt_encoded;
+                        }
+                        MTF m2f;
+                        output = m2f.encode(output);
+                        vector<int> compressed; 
+                        lzwCompress(output, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
+                    case BWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        unsigned long size = data.size();
+                        unsigned long nPerfectChunk = size / CHUNK_SIZE;
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bwt_encoded = bwtEncode(data.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bwt_encoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bwt_encoded = bwtEncode(data.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bwt_encoded;
+                        }
+                        MTF m2f;
+                        output = m2f.encode(output);
+                        output = rleEncode(output);
+                        vector<int> compressed; 
+                        lzwCompress(output, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
+                    case BBWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: Bijective BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        unsigned long size = data.size();
+                        unsigned long nPerfectChunk = size / CHUNK_SIZE;
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bbwt_encoded = bbwtEncode(data.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bbwt_encoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bbwt_encoded = bbwtEncode(data.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bbwt_encoded;
+                        }
+                        MTF m2f;
+                        output = m2f.encode(output);
+                        output = rleEncode(output);
+                        vector<int> compressed; 
+                        lzwCompress(output, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
+                    case RLE_BWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: RLE -> BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        data = RunLengthEncoding(data);
+                        unsigned long size = data.size();
+                        unsigned long nPerfectChunk = size / CHUNK_SIZE;
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bwt_encoded = bwtEncode(data.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bwt_encoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bwt_encoded = bwtEncode(data.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bwt_encoded;
+                        }
+                        MTF m2f;
+                        output = m2f.encode(output);
+                        output = rleEncode(output);
+                        vector<int> compressed; 
+                        lzwCompress(output, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
+                    case RLE_BBWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: RLE -> Bijective BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        data = RunLengthEncoding(data);
+                        unsigned long size = data.size();
+                        unsigned long nPerfectChunk = size / CHUNK_SIZE;
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bbwt_encoded = bbwtEncode(data.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bbwt_encoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bbwt_encoded = bbwtEncode(data.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bbwt_encoded;
+                        }
+                        MTF m2f;
+                        output = m2f.encode(output);
+                        output = rleEncode(output);
+                        vector<int> compressed; 
+                        lzwCompress(output, back_inserter(compressed));
+                        stringstream result;
+                        copy(compressed.begin(), compressed.end(), std::ostream_iterator<int>(result, " "));
+                        huffman huffman_encoder(argv[3], argv[4]);
+                        huffman_encoder.compressData(result.str());
+                        break;
+                    }
+
                 }            
             }
             break;
@@ -648,6 +901,154 @@ int main(int argc, char* argv[]) {
                         cout << "Pipeline: RLE -> Bijective BWT -> M2F -> RLE -> Arithmetic Coding" << endl;
                         Decode arithmetic_decoder; 
                         data = arithmetic_decoder.decodeData(argv[3]);
+                        data = rleDecode(data);
+                        MTF m2f;
+                        string m2f_decoded = m2f.decode(data);
+                        unsigned long size = m2f_decoded.size();
+                        unsigned long nPerfectChunk = size / (CHUNK_SIZE);
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bbwt_decoded = bbwtDecode(m2f_decoded.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bbwt_decoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bbwt_decoded = bbwtDecode(m2f_decoded.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bbwt_decoded;
+                        }
+                        output = RunLengthDecoding(output);
+                        out_file << output;
+                        break;
+                    }
+
+                    case LZW_HUFFMAN: {
+                        cout << "Pipeline: LZW -> HUFFMAN" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        output = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(output, ' ');
+                        output = lzwDecompress(compressed.begin(), compressed.end());
+                        out_file << output;
+                        break;
+                    }
+
+                    case BWT_M2F_LZW_HUFFMAN: {
+                        cout << "Pipeline: BWT -> M2F -> LZW -> Huffman" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        data = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(data, ' ');
+                        data = lzwDecompress(compressed.begin(), compressed.end());
+                        MTF m2f;
+                        string m2f_decoded = m2f.decode(data);
+                        unsigned long size = m2f_decoded.size();
+                        unsigned long nPerfectChunk = size / (CHUNK_SIZE + 1);
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bwt_decoded = bwtDecode(m2f_decoded.substr(i * (CHUNK_SIZE + 1), (CHUNK_SIZE + 1)));
+                            output += bwt_decoded;
+                        }
+                        if ((nPerfectChunk * (CHUNK_SIZE + 1)) < size) {
+                            string bwt_decoded = bwtDecode(m2f_decoded.substr(nPerfectChunk * (CHUNK_SIZE + 1)));
+                            output += bwt_decoded;
+                        }
+                        out_file << output;
+                        break;
+                    }
+
+                    case BBWT_M2F_LZW_HUFFMAN: {
+                        cout << "Pipeline: Bijective BWT -> M2F -> LZW -> Huffman" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        data = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(data, ' ');
+                        data = lzwDecompress(compressed.begin(), compressed.end());
+                        MTF m2f;
+                        string m2f_decoded = m2f.decode(data);
+                        unsigned long size = m2f_decoded.size();
+                        unsigned long nPerfectChunk = size / (CHUNK_SIZE);
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bbwt_decoded = bbwtDecode(m2f_decoded.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bbwt_decoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bbwt_decoded = bbwtDecode(m2f_decoded.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bbwt_decoded;
+                        }
+                        out_file << output;
+                        break;
+                    }
+
+                    case BWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        data = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(data, ' ');
+                        data = lzwDecompress(compressed.begin(), compressed.end());
+                        data = rleDecode(data);
+                        MTF m2f;
+                        string m2f_decoded = m2f.decode(data);
+                        unsigned long size = m2f_decoded.size();
+                        unsigned long nPerfectChunk = size / (CHUNK_SIZE + 1);
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bwt_decoded = bwtDecode(m2f_decoded.substr(i * (CHUNK_SIZE + 1), (CHUNK_SIZE + 1)));
+                            output += bwt_decoded;
+                        }
+                        if ((nPerfectChunk * (CHUNK_SIZE + 1)) < size) {
+                            string bwt_decoded = bwtDecode(m2f_decoded.substr(nPerfectChunk * (CHUNK_SIZE + 1)));
+                            output += bwt_decoded;
+                        }
+                        out_file << output;
+                        break;
+                    }
+
+                    case BBWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: Bijective BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        data = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(data, ' ');
+                        data = lzwDecompress(compressed.begin(), compressed.end());
+                        data = rleDecode(data);
+                        MTF m2f;
+                        string m2f_decoded = m2f.decode(data);
+                        unsigned long size = m2f_decoded.size();
+                        unsigned long nPerfectChunk = size / (CHUNK_SIZE);
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bbwt_decoded = bbwtDecode(m2f_decoded.substr(i * CHUNK_SIZE, CHUNK_SIZE));
+                            output += bbwt_decoded;
+                        }
+                        if ((nPerfectChunk * CHUNK_SIZE) < size) {
+                            string bbwt_decoded = bbwtDecode(m2f_decoded.substr(nPerfectChunk * CHUNK_SIZE));
+                            output += bbwt_decoded;
+                        }
+                        out_file << output;
+                        break;
+                    }
+
+                    case RLE_BWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: RLE -> BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        data = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(data, ' ');
+                        data = lzwDecompress(compressed.begin(), compressed.end());
+                        data = rleDecode(data);
+                        MTF m2f;
+                        string m2f_decoded = m2f.decode(data);
+                        unsigned long size = m2f_decoded.size();
+                        unsigned long nPerfectChunk = size / (CHUNK_SIZE + 1);
+                        for(unsigned long i = 0; i < nPerfectChunk; i++) {
+                            string bwt_decoded = bwtDecode(m2f_decoded.substr(i * (CHUNK_SIZE + 1), (CHUNK_SIZE + 1)));
+                            output += bwt_decoded;
+                        }
+                        if ((nPerfectChunk * (CHUNK_SIZE + 1)) < size) {
+                            string bwt_decoded = bwtDecode(m2f_decoded.substr(nPerfectChunk * (CHUNK_SIZE + 1)));
+                            output += bwt_decoded;
+                        }
+                        output = RunLengthDecoding(output);
+                        out_file << output;
+                        break;
+                    }
+
+                    case RLE_BBWT_M2F_RLE_LZW_HUFFMAN: {
+                        cout << "Pipeline: RLE -> Bijective BWT -> M2F -> RLE -> LZW -> Huffman" << endl;
+                        huffman huffman_decoder(argv[3], argv[4]);
+                        data = huffman_decoder.decompressData();
+                        vector<int> compressed = stringToIntVector(data, ' ');
+                        data = lzwDecompress(compressed.begin(), compressed.end()); 
                         data = rleDecode(data);
                         MTF m2f;
                         string m2f_decoded = m2f.decode(data);

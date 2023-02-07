@@ -130,7 +130,14 @@ PIPELINES = [
     "RLE_BWT_M2F_RLE_HUFFMAN",           
     "RLE_BWT_M2F_RLE_ARITHMETIC_CODE",   
     "RLE_BBWT_M2F_RLE_HUFFMAN",          
-    "RLE_BBWT_M2F_RLE_ARITHMETIC_CODE"
+    "RLE_BBWT_M2F_RLE_ARITHMETIC_CODE",
+    "LZW_HUFFMAN",
+    "BWT_M2F_LZW_HUFFMAN",
+    "BBWT_M2F_LZW_HUFFMAN",
+    "BWT_M2F_RLE_LZW_HUFFMAN",                
+    "BBWT_M2F_RLE_LZW_HUFFMAN",                
+    "RLE_BWT_M2F_RLE_LZW_HUFFMAN",           
+    "RLE_BBWT_M2F_RLE_LZW_HUFFMAN",           
 ]    
 
 
@@ -142,10 +149,14 @@ if __name__ == "__main__":
 
     map_results_huffman = []
     map_results_arith = []
+    map_results_lzw_huffman = []
 
     for file_name in os.listdir(PATH_DIR_TEST_FILES):
 
         for pipe in range(len(PIPELINES)):
+
+            if pipe < 14:
+                continue
 
             abspath_file = os.path.join(PATH_DIR_TEST_FILES, file_name)
             abspath_compressed_file = os.path.join(COMPRESSED_DIR_PATH, generate_file_name(os.path.splitext(file_name)[0],PIPELINES[pipe]))
@@ -161,29 +172,43 @@ if __name__ == "__main__":
             os.system(f'./main -d {pipe} {abspath_compressed_file} {abspath_decompressed_file}')
             decompression_time = round((time.time() - start_time) * 1000)
             
-            if (PIPELINES[pipe].find("HUFFMAN") != -1):
-                result_huffman = dict()
-                result_huffman["filename"] = file_name
-                result_huffman["pipeline"] = PIPELINES[pipe]
-                result_huffman["compression_ratio"] = compression_ratio_from_file(abspath_file,abspath_compressed_file)
-                result_huffman["compression_time"] = compression_time
-                result_huffman["decompression_time"] = decompression_time
-                map_results_huffman.append(result_huffman)
+            if (pipe > 13):
+                result_lzw_huffman = dict()
+                result_lzw_huffman["filename"] = file_name
+                result_lzw_huffman["pipeline"] = PIPELINES[pipe]
+                result_lzw_huffman["compression_ratio"] = compression_ratio_from_file(abspath_file,abspath_compressed_file)
+                result_lzw_huffman["compression_time"] = compression_time
+                result_lzw_huffman["decompression_time"] = decompression_time
+                map_results_lzw_huffman.append(result_lzw_huffman)
 
             else:
-                result_arith = dict()
-                result_arith["pipeline"] = PIPELINES[pipe]
-                result_arith["compression_ratio"] = compression_ratio_from_file(abspath_file,abspath_compressed_file)
-                result_arith["compression_time"] = compression_time
-                result_arith["filename"] = file_name
-                result_arith["decompression_time"] = decompression_time
-                map_results_arith.append(result_arith)
-        
-        plot_compression_ratio(file_name, "huffman", map_results_huffman)
-        plot_compression_ratio(file_name, "arithmetic code", map_results_arith)
 
-        plot_time_different_pipeline(file_name, "huffman", map_results_huffman)
-        plot_time_different_pipeline(file_name, "arithmetic code", map_results_arith)
+                if (PIPELINES[pipe].find("HUFFMAN") != -1):
+                    result_huffman = dict()
+                    result_huffman["filename"] = file_name
+                    result_huffman["pipeline"] = PIPELINES[pipe]
+                    result_huffman["compression_ratio"] = compression_ratio_from_file(abspath_file,abspath_compressed_file)
+                    result_huffman["compression_time"] = compression_time
+                    result_huffman["decompression_time"] = decompression_time
+                    map_results_huffman.append(result_huffman)
+
+                else:
+                    result_arith = dict()
+                    result_arith["pipeline"] = PIPELINES[pipe]
+                    result_arith["compression_ratio"] = compression_ratio_from_file(abspath_file,abspath_compressed_file)
+                    result_arith["compression_time"] = compression_time
+                    result_arith["filename"] = file_name
+                    result_arith["decompression_time"] = decompression_time
+                    map_results_arith.append(result_arith)
+        
+        #plot_compression_ratio(file_name, "huffman", map_results_huffman)
+        #plot_compression_ratio(file_name, "arithmetic code", map_results_arith)
+        plot_compression_ratio(file_name, "lzw huffman", map_results_lzw_huffman)
+
+        #plot_time_different_pipeline(file_name, "huffman", map_results_huffman)
+        #plot_time_different_pipeline(file_name, "arithmetic code", map_results_arith)
+        plot_time_different_pipeline(file_name, "lzw huffman", map_results_lzw_huffman)
 
         map_results_arith.clear()
         map_results_huffman.clear()
+        map_results_lzw_huffman.clear()
