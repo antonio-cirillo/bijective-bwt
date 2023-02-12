@@ -201,12 +201,12 @@ if __name__ == "__main__":
                     result_arith["decompression_time"] = decompression_time
                     map_results_arith.append(result_arith)
         
-        #plot_compression_ratio(file_name, "huffman", map_results_huffman)
-        #plot_compression_ratio(file_name, "arithmetic code", map_results_arith)
+        plot_compression_ratio(file_name, "huffman", map_results_huffman)
+        plot_compression_ratio(file_name, "arithmetic code", map_results_arith)
         plot_compression_ratio(file_name, "lzw huffman", map_results_lzw_huffman)
 
-        #plot_time_different_pipeline(file_name, "huffman", map_results_huffman)
-        #plot_time_different_pipeline(file_name, "arithmetic code", map_results_arith)
+        plot_time_different_pipeline(file_name, "huffman", map_results_huffman)
+        plot_time_different_pipeline(file_name, "arithmetic code", map_results_arith)
         plot_time_different_pipeline(file_name, "lzw huffman", map_results_lzw_huffman)
 
         map_results_arith.clear()
